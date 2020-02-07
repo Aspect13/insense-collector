@@ -61,7 +61,7 @@ class VKCounters(Base):
 	articles = Column(Integer, default=0)
 	wall_posts = Column(Integer, default=0)
 
-	group = relationship('VKGroup', back_populates='counters', cascade='all,delete')
+	group = relationship('VKGroup', back_populates='counters', cascade='all,delete', uselist=False)
 	group_id = Column(Integer, ForeignKey('VKGroup.pk'), nullable=False, unique=True)
 
 	@classmethod
@@ -94,7 +94,7 @@ class VKGroup(Base):
 	id = Column(Integer, unique=True,)
 	name = Column(String(128), nullable=False)
 	screen_name = Column(String(128), nullable=False)
-	counters = relationship(VKCounters, back_populates='group', cascade='all,delete')
+	counters = relationship(VKCounters, back_populates='group', cascade='all,delete', uselist=False)
 	description = Column(String(512))
 	start_date = Column(Date, nullable=True)
 	avatar = Column(String(256))

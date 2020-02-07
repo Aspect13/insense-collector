@@ -1,22 +1,36 @@
-def write_model_to_worksheet(wb, model, session):
+from pathlib import Path
+
+from openpyxl import Workbook
+from models import Session
+from settings import OUTPUTS_FOLDER
+
+
+def get_excel_wb_path(suffix=None, index=0):
+	file_name = f'db_dump{suffix}_{index}'
+	if Path.joinpath(OUTPUTS_FOLDER, f'{file_name}.xlsx').exists():
+		new_index = int(file_name.split('_')[-1]) + 1
+		return get_excel_wb_path(suffix, new_index)
+	else:
+		return Path.joinpath(OUTPUTS_FOLDER, f'{file_name}.xlsx')
+
+
+def write_model_to_worksheet(wb, model, query):
 	ws = wb.create_sheet(model.__tablename__)
 	ws.append(model.__table__.columns.keys())
-	for i in session.query(model).all():
+	for i in query:
 		data = list(map(i.__dict__.get, model.__table__.columns.keys()))
 		ws.append(data)
 
 
-def dump_to_excel(func, suffix='', write_only=True):
-	session = Session()
+def dump_to_excel(model, query, suffix='', write_only=True):
 	wb = Workbook(write_only=write_only)
-	func(wb, ProductModel, session)
-	write_model_to_worksheet(wb, ReviewModel, session)
-	write_model_to_worksheet(wb, ImageModel, session)
-	wb.save(EXCEL_WB_PATH(suffix))
+	write_model_to_worksheet(wb, model, query)
+	wb.save(get_excel_wb_path(suffix))
 
 
 if __name__ == '__main__':
-	dump_to_excel(write_model_to_worksheet, suffix='_VK')
+	s = Session()
+	dump_to_excel(suffix='_VK')
 
 
 

@@ -1,12 +1,10 @@
 import vk_api
-import requests
-from bs4 import BeautifulSoup
 from sqlalchemy.exc import IntegrityError
 
 from logger_custom import logger
 from models import VKGroup, VKCounters, Session, VKWallPost
 from settings import LOGIN, PASSWORD, POSTS_AMOUNT, UPDATE_GROUP_INFO, UPDATE_COUNTERS, POSTS_DOWNLOAD_MAX, \
-	UPDATE_POSTS_INFO
+	UPDATE_POSTS_INFO, INPUT_LIST_LINE_SEPARATOR, INPUTS_FOLDER, DB_PATH
 
 
 def make_group_wall_id(group):
@@ -142,14 +140,32 @@ def download_groups(groups):
 			logger.info(f'Start date for group [{group_name}/{insense_name}] from the first comment update success!')
 
 
+def file_loader(file_path):
+	def process_line(line):
+		template = [None] * 3
+		splitted = line.split(INPUT_LIST_LINE_SEPARATOR, maxsplit=2)
+		for i in range(len(splitted)):
+			try:
+				template[i] = splitted[i].strip()
+			except IndexError:
+				break
+		return tuple(template)
+	return list(process_line(line) for line in open(file_path, 'r').readlines())
+
+
 if __name__ == '__main__':
-	groups = [
-		('alecbenjaminmusic', 'Какой-то чел', 'Видать музыкант'),
-		('tnt', 'CHANNEL TNT', 'some custom description'),
-	]
-	download_groups(groups)
+	if not DB_PATH.exists():
+		from models import Base, engine
+		Base.metadata.create_all(engine)
+	choices = list(INPUTS_FOLDER.iterdir())
+	choice_list = '\n'.join([f'{index}: {item.name}' for index, item in enumerate(choices)])
+	select_file_index = int(input(f'Choose input file by typing number:\n{choice_list}\n'))
+	file_path = choices[select_file_index]
 
-
-
-
-
+	groups = file_loader(file_path)
+	print('File contents are:')
+	print('\n'.join(str(i) for i in groups))
+	if str(input('Type anything and hit [ENTER] to start downloading\n')) != '':
+		download_groups(groups)
+	else:
+		print('Download cancelled')
