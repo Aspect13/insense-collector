@@ -1,7 +1,7 @@
 from pathlib import Path
-
 from openpyxl import Workbook
-from models import Session
+
+from logger_custom import logger
 from settings import OUTPUTS_FOLDER
 
 
@@ -14,23 +14,26 @@ def get_excel_wb_path(suffix=None, index=0):
 		return Path.joinpath(OUTPUTS_FOLDER, f'{file_name}.xlsx')
 
 
-def write_model_to_worksheet(wb, model, query):
-	ws = wb.create_sheet(model.__tablename__)
-	ws.append(model.__table__.columns.keys())
-	for i in query:
-		data = list(map(i.__dict__.get, model.__table__.columns.keys()))
-		ws.append(data)
+def write_model_to_worksheet(worksheet, query):
+	worksheet.append([i['name'] for i in query.column_descriptions])
+	for group_data in query.all():
+		worksheet.append(group_data)
 
 
-def dump_to_excel(model, query, suffix='', write_only=True):
+def dump_to_excel(query, worksheet_name='Sheet1', suffix='', write_only=True):
+	log_query = str(query).replace("\n", "  ")
+	logger.info(f'Writing data to excel with query {log_query}')
 	wb = Workbook(write_only=write_only)
-	write_model_to_worksheet(wb, model, query)
-	wb.save(get_excel_wb_path(suffix))
+	ws = wb.create_sheet(worksheet_name)
+	write_model_to_worksheet(ws, query)
+	save_path = get_excel_wb_path(suffix)
+	logger.info(f'Saving workbook at: {save_path}')
+	wb.save(save_path)
 
 
 if __name__ == '__main__':
-	s = Session()
-	dump_to_excel(suffix='_VK')
+	from dbshell import vk_query
+	dump_to_excel(vk_query, suffix='_VK', worksheet_name='vk_groups')
 
 
 

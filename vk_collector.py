@@ -149,11 +149,18 @@ def file_loader(file_path):
 				template[i] = splitted[i].strip()
 			except IndexError:
 				break
+		if template[0] in (None, ''):
+			return
 		return tuple(template)
-	return list(process_line(line) for line in open(file_path, 'r').readlines())
+	result = []
+	for line in open(file_path, 'r').readlines():
+		processed_line = process_line(line)
+		if processed_line:
+			result.append(processed_line)
+	return result
 
 
-if __name__ == '__main__':
+def run():
 	if not DB_PATH.exists():
 		from models import Base, engine
 		Base.metadata.create_all(engine)
@@ -169,3 +176,7 @@ if __name__ == '__main__':
 		download_groups(groups)
 	else:
 		print('Download cancelled')
+
+
+if __name__ == '__main__':
+	run()
